@@ -254,15 +254,61 @@ namespace PixelArena
         void RpcExplosion(Vector3 point, float effectRadius)
         {
             if (!VisibleToLocalRoom()) return;
+            float visualRadius = Mathf.Max(0.5f, effectRadius);
+            var effect = new GameObject("Projectile Explosion Effect");
+            effect.transform.position = point;
+
+            var particles = effect.AddComponent<ParticleSystem>();
+            particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.duration = 0.6f;
+            main.maxParticles = 48;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.25f, 0.55f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(visualRadius * 0.8f, visualRadius * 2.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.06f, Mathf.Max(0.12f, visualRadius * 0.09f));
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 0.85f, 0.2f, 1f), new Color(1f, 0.12f, 0.01f, 1f));
+            main.gravityModifier = 0.65f;
+
+            var emission = particles.emission;
+            emission.enabled = false;
+            var shape = particles.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = Mathf.Max(0.05f, visualRadius * 0.08f);
+            particles.Play();
+            particles.Emit(Mathf.Clamp(Mathf.RoundToInt(20f + visualRadius * 6f), 20, 48));
+
+            var explosionLight = effect.AddComponent<Light>();
+            explosionLight.type = LightType.Point;
+            explosionLight.color = new Color(1f, 0.32f, 0.04f);
+            explosionLight.range = Mathf.Max(2f, visualRadius * 1.75f);
+            explosionLight.intensity = Mathf.Max(2f, visualRadius * 1.5f);
+            explosionLight.shadows = LightShadows.None;
+            Destroy(explosionLight, 0.14f);
+
             var flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            flash.name = "Projectile Explosion";
-            flash.transform.position = point;
-            flash.transform.localScale = Vector3.one * Mathf.Max(0.2f, effectRadius * 0.35f);
+            flash.name = "Explosion Flash";
+            flash.transform.SetParent(effect.transform, false);
+            flash.transform.localScale = Vector3.one * Mathf.Max(0.2f, visualRadius * 0.35f);
             var collider = flash.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
+            if (collider != null)
+            {
+                collider.enabled = false;
+                Destroy(collider);
+            }
             var renderer = flash.GetComponent<Renderer>();
-            if (renderer != null) renderer.material.color = new Color(1f, 0.35f, 0.05f, 1f);
+            if (renderer != null)
+            {
+                var flashMaterial = renderer.material;
+                flashMaterial.color = new Color(1f, 0.35f, 0.05f, 1f);
+                Destroy(flashMaterial, 0.2f);
+            }
             Destroy(flash, 0.12f);
+            Destroy(effect, 0.9f);
         }
 
         void Update()
