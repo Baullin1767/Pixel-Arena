@@ -1,0 +1,376 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4473492137201530939
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4884778270461062255}
+  - component: {fileID: 5163527639621928553}
+  - component: {fileID: 5329024412981260733}
+  m_Layer: 0
+  m_Name: Body
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4884778270461062255
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4473492137201530939}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 0.8, y: 1, z: 0.8}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 837428609279679397}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &5163527639621928553
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4473492137201530939}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &5329024412981260733
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4473492137201530939}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 0b3093579687cd547ada5cfdfa4d8802, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7977810978496590149
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 837428609279679397}
+  - component: {fileID: 4986752006160751485}
+  - component: {fileID: 2623097667635477044}
+  - component: {fileID: 3693224757887265599}
+  - component: {fileID: 1557290054723109712}
+  - component: {fileID: 8661452023336329491}
+  - component: {fileID: 7185850188240704520}
+  - component: {fileID: 7120703630639932169}
+  - component: {fileID: 4405620222355703321}
+  m_Layer: 0
+  m_Name: Player
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &837428609279679397
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4884778270461062255}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4986752006160751485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 0
+  _assetId: 4172085538
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &2623097667635477044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d17e718851449a6879986e45c458fb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkMatch
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  MatchID: 
+--- !u!114 &3693224757887265599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d732a3ad77a2304b91ccbc277b8cee0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelArena.RoomMember
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  Phase: 0
+--- !u!136 &1557290054723109712
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.4
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!54 &8661452023336329491
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
+--- !u!114 &7185850188240704520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da60047bd4a1e8246b44b8324b6bbddb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelArena.PlayerMotor
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  moveSpeed: 6
+  jumpSpeed: 7
+  gravity: 20
+  terminalSpeed: 40
+  maxGroundAngle: 50
+  inputTimeout: 0.3
+  eyeHeight: 1.6
+  mouseSensitivity: 0.12
+  interactionRange: 3
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &7120703630639932169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85f2c0ad3e42542448758b48a01a1aba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelArena.PlayerCombat
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  maxHealth: 100
+  respawnDelay: 3
+  weapons:
+  - kind: 0
+    displayName: Pistol
+    fireMode: 0
+    automatic: 0
+    magazineSize: 12
+    startingReserve: 48
+    shotInterval: 0.25
+    reloadDuration: 1.2
+    damage: 25
+    range: 100
+    projectileSpeed: 20
+    projectileGravity: 0
+    projectileRadius: 0.12
+    capsuleHalfLength: 0.3
+    explosionRadius: 0
+    maxBounces: 0
+  - kind: 1
+    displayName: Rifle
+    fireMode: 0
+    automatic: 1
+    magazineSize: 30
+    startingReserve: 120
+    shotInterval: 0.12
+    reloadDuration: 1.6
+    damage: 12
+    range: 120
+    projectileSpeed: 20
+    projectileGravity: 0
+    projectileRadius: 0.12
+    capsuleHalfLength: 0.3
+    explosionRadius: 0
+    maxBounces: 0
+  - kind: 2
+    displayName: Rocket Launcher
+    fireMode: 1
+    automatic: 0
+    magazineSize: 1
+    startingReserve: 5
+    shotInterval: 0.8
+    reloadDuration: 1.8
+    damage: 100
+    range: 80
+    projectileSpeed: 22
+    projectileGravity: 0
+    projectileRadius: 0.16
+    capsuleHalfLength: 0.3
+    explosionRadius: 4
+    maxBounces: 0
+  - kind: 3
+    displayName: Ricochet Gun
+    fireMode: 2
+    automatic: 1
+    magazineSize: 20
+    startingReserve: 80
+    shotInterval: 0.15
+    reloadDuration: 1.7
+    damage: 18
+    range: 120
+    projectileSpeed: 20
+    projectileGravity: 0
+    projectileRadius: 0.12
+    capsuleHalfLength: 0.3
+    explosionRadius: 0
+    maxBounces: 10
+  - kind: 4
+    displayName: Grenade Launcher
+    fireMode: 3
+    automatic: 0
+    magazineSize: 4
+    startingReserve: 12
+    shotInterval: 0.7
+    reloadDuration: 1.7
+    damage: 75
+    range: 60
+    projectileSpeed: 16
+    projectileGravity: 18
+    projectileRadius: 0.18
+    capsuleHalfLength: 0.35
+    explosionRadius: 4
+    maxBounces: 0
+  projectilePrefab: {fileID: 2071164224806927629, guid: 5edb753493f22f447a7c4be28ed833ba, type: 3}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  combatInputTimeout: 0.3
+--- !u!114 &4405620222355703321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977810978496590149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7780d80785f5deb4cb93c803bea991c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelArena.PlayerWeaponVisuals

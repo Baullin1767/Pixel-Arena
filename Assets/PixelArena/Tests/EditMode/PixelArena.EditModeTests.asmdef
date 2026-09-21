@@ -1,0 +1,5 @@
+{
+  "name": "PixelArena.EditModeTests",
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}
