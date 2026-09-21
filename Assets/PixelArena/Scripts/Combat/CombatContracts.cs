@@ -38,6 +38,9 @@ namespace PixelArena
         [Min(0.01f)] public float projectileRadius = 0.12f;
         [Min(0f)] public float capsuleHalfLength = 0.3f;
         [Min(0f)] public float explosionRadius;
+        [Min(0.01f)] public float projectileMass = 0.45f;
+        [Range(0f, 1f)] public float projectileBounciness = 0.6f;
+        [Range(0f, 1f)] public float projectileFriction = 0.05f;
         [Range(0, 10)] public int maxBounces;
 
         public static WeaponSettings[] CreatePrototypeDefaults()
@@ -74,7 +77,8 @@ namespace PixelArena
                     kind = WeaponKind.GrenadeLauncher, displayName = "Grenade Launcher", fireMode = WeaponFireMode.Grenade,
                     magazineSize = 4, startingReserve = 12, shotInterval = 0.7f, reloadDuration = 1.7f,
                     damage = 75f, range = 60f, projectileSpeed = 16f, projectileGravity = 18f,
-                    projectileRadius = 0.18f, capsuleHalfLength = 0.35f, explosionRadius = 4f
+                    projectileRadius = 0.18f, capsuleHalfLength = 0.35f, explosionRadius = 4f,
+                    projectileMass = 0.45f, projectileBounciness = 0.65f, projectileFriction = 0.05f
                 }
             };
         }

@@ -19,6 +19,7 @@ namespace PixelArena
         PlayerCombat owner;
         RoomMember ownerMember;
         Vector3 velocity;
+        Vector3 previousPosition;
         float damage;
         float gravity;
         float radius;
@@ -32,6 +33,9 @@ namespace PixelArena
         int layerMask;
         string cause;
         bool initialized;
+        Rigidbody grenadeBody;
+        CapsuleCollider grenadeCollider;
+        PhysicsMaterial grenadeMaterial;
         GameObject visual;
         Vector3 clientTargetPosition;
         Quaternion clientTargetRotation;
@@ -56,11 +60,48 @@ namespace PixelArena
             layerMask = collisionMask;
             cause = settings.displayName;
             transform.SetPositionAndRotation(origin, Quaternion.LookRotation(direction));
+            previousPosition = origin;
             replicatedPosition = origin;
             replicatedRotation = transform.rotation;
             expiresAt = NetworkTime.time + Mathf.Max(2f,
                 maximumTravel / Mathf.Max(0.1f, settings.projectileSpeed) + 1f);
+            if (mode == WeaponFireMode.Grenade) ConfigureGrenadePhysics(settings, direction.normalized);
             initialized = true;
+        }
+
+        [Server]
+        void ConfigureGrenadePhysics(WeaponSettings settings, Vector3 direction)
+        {
+            grenadeMaterial = new PhysicsMaterial("Grenade Bounce")
+            {
+                bounciness = Mathf.Clamp01(settings.projectileBounciness),
+                dynamicFriction = Mathf.Clamp01(settings.projectileFriction),
+                staticFriction = Mathf.Clamp01(settings.projectileFriction),
+                bounceCombine = PhysicsMaterialCombine.Maximum,
+                frictionCombine = PhysicsMaterialCombine.Minimum
+            };
+
+            grenadeCollider = gameObject.AddComponent<CapsuleCollider>();
+            grenadeCollider.direction = 2;
+            grenadeCollider.radius = radius;
+            grenadeCollider.height = Mathf.Max(radius * 2f, (capsuleHalfLength + radius) * 2f);
+            grenadeCollider.sharedMaterial = grenadeMaterial;
+
+            grenadeBody = gameObject.AddComponent<Rigidbody>();
+            grenadeBody.mass = Mathf.Max(0.01f, settings.projectileMass);
+            grenadeBody.useGravity = false;
+            grenadeBody.interpolation = RigidbodyInterpolation.None;
+            grenadeBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            grenadeBody.linearDamping = 0.02f;
+            grenadeBody.angularDamping = 0.05f;
+            grenadeBody.linearVelocity = direction * Mathf.Max(0.1f, settings.projectileSpeed);
+            grenadeBody.angularVelocity = new Vector3(8f, 5f, 3f);
+
+            if (owner != null)
+            {
+                foreach (var ownerCollider in owner.GetComponentsInChildren<Collider>())
+                    if (ownerCollider != null) Physics.IgnoreCollision(grenadeCollider, ownerCollider);
+            }
         }
 
         public override void OnStartClient()
@@ -76,14 +117,26 @@ namespace PixelArena
         {
             if (!initialized || member == null || member.Room == null || member.Room.Closing
                 || !member.Room.PhysicsScene.IsValid() || owner == null || ownerMember == null
-                || !member.SharesRoom(ownerMember) || NetworkTime.time >= expiresAt || travelled >= maximumTravel)
+                || !member.SharesRoom(ownerMember))
             {
                 NetworkServer.Destroy(gameObject);
                 return;
             }
 
+            if (NetworkTime.time >= expiresAt || travelled >= maximumTravel)
+            {
+                if (mode == WeaponFireMode.Grenade) Explode(transform.position);
+                else NetworkServer.Destroy(gameObject);
+                return;
+            }
+
+            if (mode == WeaponFireMode.Grenade)
+            {
+                UpdatePhysicalGrenade();
+                return;
+            }
+
             float delta = Time.fixedDeltaTime;
-            if (mode == WeaponFireMode.Grenade) velocity += Vector3.down * gravity * delta;
             float step = Mathf.Min(velocity.magnitude * delta, maximumTravel - travelled);
             if (step <= 0f)
             {
@@ -91,7 +144,8 @@ namespace PixelArena
                 return;
             }
             Vector3 direction = velocity.normalized;
-            if (TryNearestHit(transform.position, direction, step, out var hit))
+            Vector3 currentPosition = previousPosition + direction * step;
+            if (TryNearestHit(previousPosition, direction, Vector3.Distance(previousPosition, currentPosition), out var hit))
             {
                 if (mode == WeaponFireMode.Ricochet)
                 {
@@ -105,7 +159,8 @@ namespace PixelArena
                     if (Bounces >= maxBounces) { NetworkServer.Destroy(gameObject); return; }
                     Bounces++;
                     velocity = Vector3.Reflect(velocity, hit.normal);
-                    transform.position += direction * hit.distance + hit.normal * 0.015f;
+                    transform.position = hit.point + hit.normal * 0.015f;
+                    previousPosition = transform.position;
                     transform.rotation = Quaternion.LookRotation(velocity.normalized);
                     replicatedPosition = transform.position; replicatedRotation = transform.rotation;
                     return;
@@ -114,28 +169,36 @@ namespace PixelArena
                 Explode(hit.point);
                 return;
             }
-            transform.position += direction * step;
+            transform.position = currentPosition;
+            previousPosition = currentPosition;
             transform.rotation = Quaternion.LookRotation(direction);
             travelled += step;
             replicatedPosition = transform.position;
             replicatedRotation = transform.rotation;
         }
 
+        [Server]
+        void UpdatePhysicalGrenade()
+        {
+            if (grenadeBody == null || grenadeCollider == null)
+            {
+                NetworkServer.Destroy(gameObject);
+                return;
+            }
+
+            Vector3 currentPosition = grenadeBody.position;
+            travelled += Vector3.Distance(previousPosition, currentPosition);
+            previousPosition = currentPosition;
+            grenadeBody.AddForce(Vector3.down * gravity, ForceMode.Acceleration);
+            replicatedPosition = currentPosition;
+            replicatedRotation = grenadeBody.rotation;
+        }
+
         bool TryNearestHit(Vector3 origin, Vector3 direction, float distance, out RaycastHit nearest)
         {
             nearest = default;
-            int count;
-            if (mode == WeaponFireMode.Grenade && capsuleHalfLength > 0f)
-            {
-                Vector3 axis = direction * capsuleHalfLength;
-                count = member.Room.PhysicsScene.CapsuleCast(origin - axis, origin + axis, radius, direction,
-                    hits, distance, layerMask, QueryTriggerInteraction.Ignore);
-            }
-            else
-            {
-                count = member.Room.PhysicsScene.SphereCast(origin, radius, direction, hits, distance,
-                    layerMask, QueryTriggerInteraction.Ignore);
-            }
+            int count = member.Room.PhysicsScene.Raycast(origin, direction, hits, distance,
+                layerMask, QueryTriggerInteraction.Ignore);
             float best = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
@@ -151,6 +214,14 @@ namespace PixelArena
                 }
             }
             return nearest.collider != null;
+        }
+
+        [ServerCallback]
+        void OnCollisionEnter(Collision collision)
+        {
+            if (!initialized || mode != WeaponFireMode.Grenade || collision.collider == null) return;
+            if (owner != null && collision.collider.transform.IsChildOf(owner.transform)) return;
+            Bounces++;
         }
 
         [Server]
@@ -233,7 +304,11 @@ namespace PixelArena
             visual.transform.localScale = mode == WeaponFireMode.Grenade
                 ? new Vector3(0.25f, 0.45f, 0.25f) : Vector3.one * 0.3f;
             var collider = visual.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
+            if (collider != null)
+            {
+                collider.enabled = false;
+                Destroy(collider);
+            }
             var renderer = visual.GetComponent<Renderer>();
             if (renderer != null) renderer.material.color = mode == WeaponFireMode.Grenade
                 ? new Color(0.2f, 0.55f, 0.18f, 1f) : new Color(0.95f, 0.2f, 0.08f, 1f);
@@ -243,6 +318,11 @@ namespace PixelArena
         public override void OnStopClient()
         {
             if (visual != null) Destroy(visual);
+        }
+
+        void OnDestroy()
+        {
+            if (grenadeMaterial != null) Destroy(grenadeMaterial);
         }
     }
 }

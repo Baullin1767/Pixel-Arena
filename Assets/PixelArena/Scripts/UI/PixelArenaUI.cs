@@ -25,6 +25,8 @@ namespace PixelArena
         const float VirtualHeight = 1080f;
         const float FeedLifetime = 6f;
         const int MaxFeedEntries = 6;
+        const float HitMarkerDuration = 0.16f;
+        const float DamageFlashDuration = 0.42f;
 
         static PixelArenaUI instance;
 
@@ -41,6 +43,9 @@ namespace PixelArena
         string interactionPrompt = string.Empty;
         StartMode lastMode;
         float nextPromptRefresh;
+        float hitMarkerUntil;
+        float damageFlashStarted;
+        float damageFlashIntensity;
         bool retrying;
 
         GUIStyle titleStyle;
@@ -139,7 +144,7 @@ namespace PixelArena
             manager = null;
             localIdentity = null;
             localMotor = null;
-            localCombat = null;
+            SetLocalCombat(null);
             localBunker = null;
         }
 
@@ -150,8 +155,37 @@ namespace PixelArena
 
             localIdentity = identity;
             localMotor = identity != null ? identity.GetComponent<PlayerMotor>() : null;
-            localCombat = identity != null ? identity.GetComponent<PlayerCombat>() : null;
+            SetLocalCombat(identity != null ? identity.GetComponent<PlayerCombat>() : null);
             interactionPrompt = string.Empty;
+        }
+
+        void SetLocalCombat(PlayerCombat value)
+        {
+            if (localCombat == value) return;
+            if (localCombat != null)
+            {
+                localCombat.LocalDamageTaken -= OnLocalDamageTaken;
+                localCombat.LocalHitConfirmed -= OnLocalHitConfirmed;
+            }
+            localCombat = value;
+            if (localCombat != null)
+            {
+                localCombat.LocalDamageTaken += OnLocalDamageTaken;
+                localCombat.LocalHitConfirmed += OnLocalHitConfirmed;
+            }
+            hitMarkerUntil = 0f;
+            damageFlashIntensity = 0f;
+        }
+
+        void OnLocalDamageTaken(float normalizedDamage)
+        {
+            damageFlashStarted = Time.unscaledTime;
+            damageFlashIntensity = Mathf.Clamp(0.28f + normalizedDamage * 1.6f, 0.3f, 0.72f);
+        }
+
+        void OnLocalHitConfirmed()
+        {
+            hitMarkerUntil = Time.unscaledTime + HitMarkerDuration;
         }
 
         void OnClientStatusChanged(MatchPhase phase, string detail)
@@ -383,6 +417,7 @@ namespace PixelArena
 
         void DrawHud()
         {
+            DrawDamageEdges();
             DrawCrosshair();
             DrawHealth();
             DrawWeapon();
@@ -399,11 +434,39 @@ namespace PixelArena
         void DrawCrosshair()
         {
             Color previous = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, 0.9f);
+            GUI.color = Time.unscaledTime < hitMarkerUntil
+                ? new Color(1f, 0.08f, 0.04f, 1f)
+                : new Color(1f, 1f, 1f, 0.9f);
             GUI.DrawTexture(new Rect(VirtualWidth * 0.5f - 12f, VirtualHeight * 0.5f - 1f, 9f, 2f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(VirtualWidth * 0.5f + 3f, VirtualHeight * 0.5f - 1f, 9f, 2f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(VirtualWidth * 0.5f - 1f, VirtualHeight * 0.5f - 12f, 2f, 9f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(VirtualWidth * 0.5f - 1f, VirtualHeight * 0.5f + 3f, 2f, 9f), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
+        void DrawDamageEdges()
+        {
+            float elapsed = Time.unscaledTime - damageFlashStarted;
+            if (damageFlashIntensity <= 0f || elapsed >= DamageFlashDuration)
+            {
+                damageFlashIntensity = 0f;
+                return;
+            }
+
+            float fade = 1f - Mathf.Clamp01(elapsed / DamageFlashDuration);
+            Color previous = GUI.color;
+            const float band = 24f;
+            for (int layer = 0; layer < 5; layer++)
+            {
+                float inset = layer * band;
+                float alpha = damageFlashIntensity * fade * (1f - layer / 5f);
+                GUI.color = new Color(0.9f, 0.02f, 0.01f, alpha);
+                GUI.DrawTexture(new Rect(inset, inset, VirtualWidth - inset * 2f, band), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(inset, VirtualHeight - inset - band, VirtualWidth - inset * 2f, band), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(inset, inset + band, band, VirtualHeight - inset * 2f - band * 2f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(VirtualWidth - inset - band, inset + band, band,
+                    VirtualHeight - inset * 2f - band * 2f), Texture2D.whiteTexture);
+            }
             GUI.color = previous;
         }
 
@@ -548,7 +611,7 @@ namespace PixelArena
 
             localIdentity = null;
             localMotor = null;
-            localCombat = null;
+            SetLocalCombat(null);
             localBunker = null;
             interactionPrompt = string.Empty;
             feed.Clear();

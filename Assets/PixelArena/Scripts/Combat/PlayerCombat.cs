@@ -43,9 +43,16 @@ namespace PixelArena
         CapsuleCollider bodyCollider;
         Renderer[] bodyRenderers;
         bool[] bodyRendererEnabled;
+        AudioSource weaponAudio;
+        AudioClip ballisticShot;
+        AudioClip energyShot;
         byte requestedWeapon;
         bool localFirePressed;
         bool localReloadPressed;
+        bool botInputActive;
+        bool botTriggerHeld;
+        bool botFirePressed;
+        bool botReloadPressed;
         bool serverTriggerHeld;
         bool serverSemiQueued;
         double lastCombatInput = double.NegativeInfinity;
@@ -53,6 +60,8 @@ namespace PixelArena
         double respawnAt = double.PositiveInfinity;
 
         public event Action StateChanged;
+        public event Action<float> LocalDamageTaken;
+        public event Action LocalHitConfirmed;
         public float Health => health;
         public float MaxHealth => maxHealth;
         public bool IsAlive => !dead;
@@ -110,9 +119,33 @@ namespace PixelArena
             requestedWeapon = selectedWeapon;
         }
 
+        public void SetBotCombatInput(byte weapon, bool triggerHeld, bool firePressed, bool reloadPressed)
+        {
+            if (!isLocalPlayer) return;
+            botInputActive = true;
+            requestedWeapon = (byte)Mathf.Clamp(weapon, 0, WeaponCount - 1);
+            botTriggerHeld = triggerHeld;
+            botFirePressed |= firePressed;
+            botReloadPressed |= reloadPressed;
+        }
+
+        public void ClearBotCombatInput()
+        {
+            botInputActive = false;
+            botTriggerHeld = botFirePressed = botReloadPressed = false;
+        }
+
         void Update()
         {
             if (!isLocalPlayer || !NetworkClient.ready) return;
+            if (botInputActive)
+            {
+                if (Time.unscaledTime < nextInputSend) return;
+                nextInputSend = Time.unscaledTime + 1f / 30f;
+                CmdCombatInput(requestedWeapon, botTriggerHeld, botFirePressed, botReloadPressed);
+                botFirePressed = botReloadPressed = false;
+                return;
+            }
             bool inputAllowed = concreteMotor != null && concreteMotor.LocalInputEnabled && !dead;
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
@@ -218,8 +251,36 @@ namespace PixelArena
                     FireProjectile(weapon, origin, direction);
                     break;
             }
+            RpcShotFired((byte)weapon.kind);
             StateChanged?.Invoke();
             return true;
+        }
+
+        [ClientRpc]
+        void RpcShotFired(byte weaponKind)
+        {
+            EnsureWeaponAudio();
+            AudioClip clip = weaponKind == (byte)WeaponKind.RocketLauncher
+                || weaponKind == (byte)WeaponKind.GrenadeLauncher ? energyShot : ballisticShot;
+            if (weaponAudio == null || clip == null) return;
+            weaponAudio.pitch = UnityEngine.Random.Range(0.94f, 1.06f);
+            weaponAudio.PlayOneShot(clip, 0.72f);
+        }
+
+        void EnsureWeaponAudio()
+        {
+            if (weaponAudio == null)
+            {
+                weaponAudio = gameObject.AddComponent<AudioSource>();
+                weaponAudio.playOnAwake = false;
+                weaponAudio.loop = false;
+                weaponAudio.spatialBlend = isLocalPlayer ? 0f : 1f;
+                weaponAudio.rolloffMode = AudioRolloffMode.Linear;
+                weaponAudio.minDistance = 2f;
+                weaponAudio.maxDistance = 45f;
+            }
+            if (ballisticShot == null) ballisticShot = Resources.Load<AudioClip>("Audio/WeaponShot_Ballistic");
+            if (energyShot == null) energyShot = Resources.Load<AudioClip>("Audio/WeaponShot_Energy");
         }
 
         [Server]
@@ -340,9 +401,31 @@ namespace PixelArena
                 || member == null || member.Room == null) return false;
             if (damage.KillerNetId != 0 && (damage.SourceRoom == null || !member.SharesRoom(damage.SourceRoom)))
                 return false;
+            float appliedDamage = Mathf.Min(health, damage.Amount);
             health = Mathf.Max(0f, health - damage.Amount);
+            if (connectionToClient != null)
+                TargetDamageTaken(connectionToClient, Mathf.Clamp01(appliedDamage / Mathf.Max(1f, maxHealth)));
+            if (damage.KillerNetId != 0 && damage.KillerNetId != netId
+                && NetworkServer.spawned.TryGetValue(damage.KillerNetId, out NetworkIdentity killerIdentity))
+            {
+                var killerCombat = killerIdentity.GetComponent<PlayerCombat>();
+                if (killerCombat != null && killerCombat.connectionToClient != null)
+                    killerCombat.TargetHitConfirmed(killerCombat.connectionToClient);
+            }
             if (health <= 0f) ServerDie(damage.KillerNetId, string.IsNullOrWhiteSpace(damage.Cause) ? "Damage" : damage.Cause);
             return true;
+        }
+
+        [TargetRpc]
+        void TargetDamageTaken(NetworkConnectionToClient target, float normalizedDamage)
+        {
+            if (isLocalPlayer) LocalDamageTaken?.Invoke(normalizedDamage);
+        }
+
+        [TargetRpc]
+        void TargetHitConfirmed(NetworkConnectionToClient target)
+        {
+            if (isLocalPlayer) LocalHitConfirmed?.Invoke();
         }
 
         [Server]

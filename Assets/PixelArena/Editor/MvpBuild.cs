@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using Mirror.SimpleWeb;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -74,7 +75,7 @@ namespace PixelArena
                 // asked to close the last loaded scene.
                 EditorSceneManager.CloseScene(stage, true);
                 var network = new GameObject("Pixel Arena Network");
-                var transport = network.AddComponent<kcp2k.KcpTransport>(); transport.Port = 7777;
+                var transport = network.AddComponent<SimpleWebTransport>(); transport.port = 7777;
                 var manager = network.AddComponent<NetManager>();
                 manager.transport = transport; manager.playerPrefab = playerPrefab;
                 manager.matchManager = matchPrefab.GetComponent<MatchManager>();

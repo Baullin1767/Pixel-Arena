@@ -24,6 +24,9 @@ namespace PixelArena.EditorTests
                 "PixelArena.PlayerMotor", "PixelArena.PlayerCombat", "PixelArena.PlayerWeaponVisuals" }.All(t => Has(player, t)), Is.True);
             Assert.That(Has(match, "MatchManager") && Has(match, "PixelArena.BunkerController"), Is.True);
             Assert.That(Has(projectile, "PixelArena.CombatProjectile"), Is.True);
+            Assert.That(projectile.GetComponent<Rigidbody>(), Is.Null,
+                "The shared projectile prefab must stay non-physical; grenade physics is added at runtime only.");
+            Assert.That(projectile.GetComponent<Collider>(), Is.Null);
         }
 
         [Test]
@@ -36,6 +39,8 @@ namespace PixelArena.EditorTests
             Assert.That((bool)settings.GetField("automatic").GetValue(rifle), Is.True);
             Assert.That((float)settings.GetField("shotInterval").GetValue(rifle), Is.EqualTo(.12f).Within(.0001f));
             Assert.That((int)settings.GetField("maxBounces").GetValue(weapons.GetValue(3)), Is.EqualTo(10));
+            Assert.That((float)settings.GetField("projectileBounciness").GetValue(weapons.GetValue(4)),
+                Is.GreaterThan(0f));
         }
 
         [Test]
@@ -48,6 +53,19 @@ namespace PixelArena.EditorTests
                 Assert.That(components.Count(c => c.GetType().FullName == "PixelArena.ArenaSpawnPoint"), Is.EqualTo(8));
                 Assert.That(components.Count(c => c.GetType().FullName == "PixelArena.ArenaBunker"), Is.EqualTo(1));
                 Assert.That(components.Any(c => c.GetType().FullName == "Mirror.NetworkIdentity"), Is.False);
+            }
+            finally { EditorSceneManager.CloseScene(scene, true); }
+        }
+
+        [Test]
+        public void MenuUsesWebGlCompatibleSimpleWebTransport()
+        {
+            var scene = EditorSceneManager.OpenScene("Assets/PixelArena/Scenes/Menu.unity", OpenSceneMode.Additive);
+            try
+            {
+                var components = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Component>(true)).ToArray();
+                Assert.That(components.Any(c => c.GetType().FullName == "Mirror.SimpleWeb.SimpleWebTransport"), Is.True);
+                Assert.That(components.Any(c => c.GetType().FullName == "kcp2k.KcpTransport"), Is.False);
             }
             finally { EditorSceneManager.CloseScene(scene, true); }
         }

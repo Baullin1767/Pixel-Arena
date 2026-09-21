@@ -48,6 +48,10 @@ namespace PixelArena
         bool jumpQueued, interactQueued;
         bool localJump, localInteract;
         bool localInputEnabled = true;
+        bool botInputActive;
+        Vector2 botMove;
+        float botYaw, botPitch;
+        bool botJump, botInteract;
         float nextSend;
         float ladderDetachUntil;
         uint revision;
@@ -59,7 +63,7 @@ namespace PixelArena
         public RoomMember Member => member;
         public Camera LocalCamera => localCamera;
         public bool LocalInputEnabled => isLocalPlayer && localInputEnabled && alive && movementEnabled
-            && Cursor.lockState == CursorLockMode.Locked && Application.isFocused;
+            && (botInputActive || (Cursor.lockState == CursorLockMode.Locked && Application.isFocused));
         public Vector3 ServerEyePosition => body.position + Vector3.up * eyeHeight;
         public Vector3 ServerAimDirection => Quaternion.Euler(serverPitch, serverYaw, 0f) * Vector3.forward;
         public Ray ServerAimRay => new Ray(ServerEyePosition, ServerAimDirection);
@@ -88,13 +92,16 @@ namespace PixelArena
         public override void OnStartLocalPlayer()
         {
             localYaw = pose.yaw; localPitch = pose.pitch;
-            var cameraObject = new GameObject("Local FPS Camera");
-            cameraObject.transform.SetParent(transform, false);
-            cameraObject.transform.localPosition = Vector3.up * eyeHeight;
-            localCamera = cameraObject.AddComponent<Camera>();
-            localCamera.nearClipPlane = 0.05f;
-            localCamera.fieldOfView = 75f;
-            cameraObject.AddComponent<AudioListener>();
+            if (!StressTestRuntime.IsBotProcess)
+            {
+                var cameraObject = new GameObject("Local FPS Camera");
+                cameraObject.transform.SetParent(transform, false);
+                cameraObject.transform.localPosition = Vector3.up * eyeHeight;
+                localCamera = cameraObject.AddComponent<Camera>();
+                localCamera.nearClipPlane = 0.05f;
+                localCamera.fieldOfView = 75f;
+                cameraObject.AddComponent<AudioListener>();
+            }
             SetLocalInputEnabled(true);
         }
         public override void OnStopLocalPlayer()
@@ -110,9 +117,37 @@ namespace PixelArena
             Cursor.visible = !enabled;
             localJump = localInteract = false;
         }
+        public void SetBotInput(Vector2 move, float yaw, float pitch, bool jump, bool interact)
+        {
+            if (!isLocalPlayer) return;
+            botInputActive = true;
+            botMove = Vector2.ClampMagnitude(move, 1f);
+            botYaw = Mathf.Repeat(yaw, 360f);
+            botPitch = Mathf.Clamp(pitch, -90f, 90f);
+            botJump |= jump;
+            botInteract |= interact;
+        }
+        public void ClearBotInput()
+        {
+            botInputActive = false;
+            botMove = Vector2.zero;
+            botJump = botInteract = false;
+        }
         void Update()
         {
             if (!isLocalPlayer || !NetworkClient.ready) return;
+            if (botInputActive)
+            {
+                localYaw = botYaw;
+                localPitch = botPitch;
+                if (Time.unscaledTime >= nextSend)
+                {
+                    nextSend = Time.unscaledTime + 1f / 30f;
+                    CmdInput(botMove, localYaw, localPitch, botJump, botInteract, revision);
+                    botJump = botInteract = false;
+                }
+                return;
+            }
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 SetLocalInputEnabled(false);
             Vector2 move = Vector2.zero;

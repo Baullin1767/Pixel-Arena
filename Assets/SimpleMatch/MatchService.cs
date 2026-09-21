@@ -14,6 +14,7 @@ public class MatchService
         if (FindRoomByConnection(conn) != null) return;
         var room = FindRoomWithFreeSlot() ?? CreateRoom(manager.roomCapacity);
         room.AddPlayer(conn);
+        StressTestRuntime.ServerRoomJoined(conn, room);
         conn.Send(new OnJoinRoomMessage { matchId = room.roomId, sceneName = room.sceneName });
     }
     internal void OnServerLeaveRoom(NetworkConnectionToClient conn, LeaveRoomMessage msg = default)
@@ -23,6 +24,7 @@ public class MatchService
         NetworkServer.SetClientNotReady(conn);
         if (conn.identity != null) NetworkServer.RemovePlayerForConnection(conn, RemovePlayerOptions.Destroy);
         room.RemovePlayer(conn);
+        StressTestRuntime.ServerRoomLeft(conn, room);
         conn.Send(new MatchStatusMessage { matchId = room.roomId, phase = MatchPhase.None, detail = "Left match" });
         if (room.IsEmpty) { rooms.Remove(room.roomId); manager.CloseRoom(room); }
     }

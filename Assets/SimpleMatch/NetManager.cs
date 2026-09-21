@@ -31,7 +31,25 @@ public class NetManager : NetworkManager
     int clientGeneration;
     struct BehaviourState { public Behaviour component; public bool enabled; }
     struct RendererState { public Renderer component; public bool enabled; }
-    public override void Awake() { base.Awake(); autoCreatePlayer = false; }
+    public override void Awake()
+    {
+        base.Awake();
+        autoCreatePlayer = false;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Browsers block ws:// from an https:// page. In production, use the
+        // webpage's WSS endpoint and let the hosting proxy forward to port 7777.
+        if (Application.absoluteURL.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            && transport is Mirror.SimpleWeb.SimpleWebTransport webTransport)
+        {
+            webTransport.clientUseWss = true;
+            webTransport.clientWebsocketSettings = new Mirror.SimpleWeb.ClientWebsocketSettings
+            {
+                ClientPortOption = Mirror.SimpleWeb.WebsocketPortOption.MatchWebpageProtocol,
+                CustomClientPort = webTransport.port
+            };
+        }
+#endif
+    }
     void Status(MatchPhase phase, string detail)
     { ClientPhase = phase; StatusText = detail; ClientStatusChanged?.Invoke(phase, detail); }
     public override void OnStartServer()
@@ -41,15 +59,21 @@ public class NetManager : NetworkManager
         NetworkServer.RegisterHandler<JoinOrCreateRoomMessage>(matchService.OnJoinCreateRoom);
         NetworkServer.RegisterHandler<LeaveRoomMessage>(matchService.OnServerLeaveRoom);
         NetworkServer.RegisterHandler<ClientReadyMsg>(matchService.OnReadyPlayer);
+        StressTestRuntime.ServerStarted();
     }
     public override void OnServerAddPlayer(NetworkConnectionToClient conn) { } // Only validated room readiness creates a player.
     public override void OnServerReady(NetworkConnectionToClient conn) { } // ReadyMessage cannot bypass room loading.
     public override void OnStopServer()
     {
+        StressTestRuntime.ServerStopped();
         serverGeneration++; matchService?.Shutdown(); matchService = null; loadQueue.Clear(); loadingRooms = false;
     }
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
-    { matchService?.OnServerLeaveRoom(conn); base.OnServerDisconnect(conn); }
+    {
+        StressTestRuntime.ServerDisconnected(conn);
+        matchService?.OnServerLeaveRoom(conn);
+        base.OnServerDisconnect(conn);
+    }
     void QueueRoom(Guid id)
     {
         loadQueue.Enqueue(matchService.FindRoomById(id));
